@@ -1,4 +1,4 @@
-Using winetricks 20180217 - sha256sum: 5ae9eb539ad58eb7437c00ef4bdaa0efd63e6be474c6c8957316f6a54f0911cd with wine-3.0 (Debian 3.0-1) and WINEARCH=win32
+Using winetricks 20180815 - sha256sum: 9343f9174146c0fa4d34e18e05269ae772a45ba78e3d8786829fa21895f6f7f4 with wine-3.0.2 (Debian 3.0.2-1) and WINEARCH=win32
 3dmark05
 3dmark2000
 3dmark2001
@@ -23,10 +23,12 @@ binkw32
 bioshock2_steam
 bioshock_demo
 borderlands_steam
+busybox
 cabinet
 calibri
 cambria
 candara
+cinepak
 civ5_demo_steam
 cjkfonts
 cmake
@@ -82,7 +84,15 @@ dirac
 directmusic
 directplay
 directx9
+dmband
+dmcompos
+dmime
+dmloader
+dmscript
+dmstyle
 dmsynth
+dmusic
+dmusic32
 dotnet11
 dotnet11sp1
 dotnet20
@@ -105,10 +115,21 @@ dragonage2_demo
 droid
 dsdmo
 dsound
+dswave
+dx8vb
 dxdiag
 dxdiagn
+dxdiagn_feb2010
 dxsdk_jun2010
 dxsdk_nov2006
+dxvk
+dxvk54
+dxvk60
+dxvk61
+dxvk62
+dxvk63
+dxvk64
+dxvk65
 emu8086
 esent
 eufonts
@@ -179,6 +200,7 @@ njjwp_trial
 nook
 npp
 nuget
+office2013pro
 ogg
 ole32
 ollydbg110
@@ -189,7 +211,6 @@ openwatcom
 pdh
 penpenxmas
 physx
-plantsvszombies
 pngfilt
 pptfonts
 psdk2003
@@ -253,6 +274,8 @@ vcrun6sp6
 vjrun20
 vlc
 vlgothic
+vulkanrt
+vulkansdk
 webio
 wenquanyi
 wglgears

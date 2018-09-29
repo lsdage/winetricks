@@ -25,14 +25,17 @@ cache="$XDG_CACHE_HOME/winetricks"
 #set -e
 set -x
 
-# FIXME: currently this requires running from src (linkcheck.sh might too), which is ugly.
-# IMO it should run from top, and/or have the logic to find src and cd there itself
-# Once this is fixed, check outputdir logic below:
-if [ -f README.md ] ; then
+if [ -f src/winetricks ] ; then
     TOP="$PWD"
-elif [ -f ../README.md ] ; then
+    shwinetricks="${PWD}/src/winetricks"
+elif [ -f ../src/winetricks ] ; then
     # realpath isn't available on OSX, use a subshell instead:
     TOP="$(cd .. && echo "$PWD")"
+    shwinetricks="${TOP}/src/winetricks"
+elif [ -f ../../src/winetricks ] ; then
+    # realpath isn't available on OSX, use a subshell instead:
+    TOP="$(cd ../.. && echo "$PWD")"
+    shwinetricks="${TOP}/src/winetricks"
 else
     echo "Running from unknown directory. Exiting"
     exit 1
@@ -66,11 +69,11 @@ elif [ ! -z "$WINETRICKS_ENABLE_KCOV" ] ; then
     # https://github.com/SimonKagstrom/kcov/issues/165
 
     # Previously, winetricks-test used `$WINETRICKS`. That fails for kcov, which
-    # then tracks bash itself and not winetricks. `./winetricks` works fine.
-    WINETRICKS="kcov --configure=bash-use-basic-parser=1 $KCOV_RESULTS ./winetricks"
-    #WINETRICKS="kcov --configure=bash-use-basic-parser=1 $KCOV_RESULTS-$(date +%k-%M-%S) ./winetricks"
+    # then tracks bash itself and not winetricks. `${shwinetricks}` works fine.
+    WINETRICKS="kcov --configure=bash-use-basic-parser=1 $KCOV_RESULTS \"${shwinetricks}\""
+    #WINETRICKS="kcov --configure=bash-use-basic-parser=1 $KCOV_RESULTS-$(date +%k-%M-%S) \"${shwinetricks}\""
 else
-    WINETRICKS="./winetricks"
+    WINETRICKS="${shwinetricks}"
 fi
 
 # Disable winetricks update checks:
@@ -82,7 +85,7 @@ WINETRICKS_SUPER_QUIET=1
 export WINETRICKS_SUPER_QUIET
 
 # verbs known to not work in -q mode yet
-BLACKLIST="dx8sdk|kde|mingw|psdk2003|psdkwin7"
+BLACKLIST="dx8sdk|kde|psdk2003|psdkwin7"
 # verbs that hang in -q because of simple problem we should work around soon
 BLACKLIST="$BLACKLIST|vc2005trial"
 # verbs that are too slow
@@ -99,6 +102,9 @@ BLACKLIST="$BLACKLIST|xmllite"
 BLACKLIST="$BLACKLIST|allcodecs"
 # FIXME: (wine/winetricks bug?) usually hangs in winetricks-test:
 BLACKLIST="$BLACKLIST|dotnet30sp1|dotnet35|dotnet35sp1|dotnet45"
+# dotnet46 has endless critical section timeouts: https://bugs.winehq.org/show_bug.cgi?id=42470
+# FIXME: test Dmitry's patch
+BLACKLIST="$BLACKLIST|dotnet46"
 # https://bugs.winehq.org/show_bug.cgi?id=40460
 BLACKLIST="$BLACKLIST|dotnet20sp2|xna31"
 # https://bugs.winehq.org/show_bug.cgi?id=16876
@@ -126,6 +132,7 @@ XVFB_BLACKLIST="$XVFB_BLACKLIST|vjrun20|windowscodecs|wmi|wmp9|wmp10|wsh56js|wsh
 # Verbs known to update frequently
 QUICKCHECK="flash steam"
 
+failed_verbs=""
 passes=0
 errors=0
 skips=0
@@ -135,7 +142,7 @@ skips=0
 # middle of a two day run.
 check_deps() {
     for tool in time cabextract; do
-        which $tool
+        command -v "$tool"
         ret=$?
 
         if [ ! $ret -eq 0 ] ; then
@@ -148,6 +155,7 @@ check_deps() {
 fail()
 {
     echo "FAIL: $*"
+    failed_verbs="${failed_verbs}|$*"
     errors=$((errors + 1))
 }
 
@@ -205,7 +213,7 @@ case "$OS" in
         for x in \
             "$WINESERVER" \
             "${WINE}server" \
-            "$(which wineserver 2> /dev/null)" \
+            "$(command -v wineserver 2> /dev/null)" \
             "$(dirname $WINE)/server/wineserver" \
             /usr/lib/wine/wineserver \
             /usr/lib/i386-kfreebsd-gnu/wine/wineserver \
@@ -299,16 +307,26 @@ test_app()
         case "$app" in
             allcodecs) ;;
             *)
+                # if test was skipped because of wrong arch, don't check for it:
+                if [ "$archskip" = "1" ]; then
+                    skip "$app was skipped because of wrong prefix arch!"
+                    return
+                fi
+
                 # no xvfb needed
-                ./winetricks -q list-installed > "${outputdir}/list-installed.out"
+                "${shwinetricks}" -q list-installed > "${outputdir}/list-installed.out"
+
                 if ! grep -w "$app" "${outputdir}/list-installed.out"; then
                     fail "test app $app not installed after install?"
                 fi
+
                 ;;
         esac
 
         # Cleanup..
+        echo "rm ${outputdir}/df-daemon"
         rm "${outputdir}/df-daemon"
+
         # Total max disk usage = max df change plus any initial blocks in cache
         DF_MIN=$(awk '{ if (min == "" || $1 < min) min=$1; } END {printf "%d\n", min}' < "${outputdir}/df-during.log" )
         DF_DIFF=$((DF_START - DF_MIN))
@@ -317,15 +335,26 @@ test_app()
         TOTAL_MB=$((TOTAL / 1024))
         mkdir -p "${outputdir}/measurements"
         echo "${app}:size_MB=${TOTAL_MB},time_sec=${seconds}" >> "${outputdir}/measurements/$app.dat"
+
+        # Cleanup the prefix, unless $W_OPT_NOCLEAN is set to 1 (to match winetricks):
+        if [ "$W_OPT_NOCLEAN" = "1" ]; then
+            echo "W_OPT_NOCLEAN set to 1, not removing wineprefix $WINEPREFIX"
+        else
+            echo "Removing wineprefix $WINEPREFIX"
+            # FIXME: for some reason, steam doesn't clean up. $WINESERVER -k doesn't help either
+            rm -rf "$WINEPREFIX"
+        fi
     fi
 }
 
 test_command()
 {
+    archskip=0
     command="$*"
-    _command_dash="$(echo "$command" | tr " " "-")"
 
-    export WINEPREFIX="$WINE_PREFIXES/$_command_dash"
+    # This previously changed spaces to hyphens. Going back to spaces so we test WINEPREFIXes
+    # with special characters, to prevent issues like https://github.com/Winetricks/winetricks/issues/995
+    export WINEPREFIX="$WINE_PREFIXES/${command}"
     #DRIVE_C="$WINEPREFIX/dosdevices/c:"
 
     # always use a clean $WINEPREFIX
@@ -334,6 +363,7 @@ test_command()
     fi
 
     # Isolate us from the user's home directory
+    # shellcheck disable=SC2086
     $XVFB $WINETRICKS sandbox
 
     echo "Installing $command"
@@ -342,16 +372,16 @@ test_command()
     $XVFB $WINETRICKS --no-isolate -q nocrashdialog "$@"
     return=$?
 
-    rm "${outputdir}/df-daemon"
-
     if [ "$EXPECT_FAIL" = "yes" ] ; then
         # A success is failure:
         if [ "$return" = "0" ] ; then
             fail "$command succeeded, should have failed"
         elif [ "$return" = "32" ] && [ "$WINEARCH" != "win32" ]; then
             skip "$command is not supported on $WINEARCH, requires win32"
+            archskip=1
         elif [ "$return" = "64" ] && [ "$WINEARCH" != "win64" ]; then
             skip "$command is not supported on $WINEARCH, requires win64"
+            archskip=1
         else
             fail "test_command $command failed!"
             return
@@ -537,8 +567,8 @@ _EOF
 test_dlls()
 {
     # no xvfb needed, kcov breaks
-    ./winetricks list-manual-download > "${outputdir}/manual.log"
-    ./winetricks dlls list | awk '{print $1}' > "${outputdir}/dlls.log"
+    "${shwinetricks}" list-manual-download > "${outputdir}/manual.log"
+    "${shwinetricks}" dlls list | awk '{print $1}' > "${outputdir}/dlls.log"
     if grep .------------------- "${outputdir}/dlls.log" ; then
         fail "output of dlls list contained garbage"
         exit 1
@@ -589,7 +619,7 @@ test_dotnet()
 test_install_cached_or_download()
 {
     # no xvfb needed, kcov breaks
-    ./winetricks list-cached list-download > "${outputdir}/ticd.log"
+    "${shwinetricks}" list-cached list-download > "${outputdir}/ticd.log"
     if grep .------------------- ticd.log ; then
         fail "output of list-cached list-download contained garbage"
         exit 1
@@ -612,7 +642,7 @@ test_install_cached_or_download()
     done
 
     # no xvfb needed, kcov breaks
-    ./winetricks list-cached | sort > cached.txt
+    "${shwinetricks}" list-cached | sort > cached.txt
 
     # Verbs that are just wrappers around others don't detect cache/install state yet.
     # Verbs that are just informative placeholders don't ever download (gecko).
@@ -663,7 +693,7 @@ test_full() {
 }
 
 test_xvfb() {
-    if [ ! "$(which xvfb-run 2>/dev/null)" ] ; then
+    if [ ! "$(command -v xvfb-run 2>/dev/null)" ] ; then
         w_die "Please install xvfb-run for xvfb tests"
     fi
 
@@ -790,11 +820,27 @@ case "$1" in
     *) echo "Usage: $0 quick|full" ; exit 1 ;;
 esac
 
+# Turn off set -x so the results are cleaner:
+set +x
+
+echo "==============================================================="
 echo "Test over, $errors failures, $passes successes, $skips skipped."
 if [ $errors = 0 ] && [ $passes -gt 0 ] ; then
     echo PASS
+    echo "==============================================================="
     exit 0
 else
     echo FAIL
+    echo "Test failures:"
+    oldifs="$IFS"
+    IFS="|"
+    for test_failure in $failed_verbs; do
+        if [ -z "$test_failure" ]; then
+            :
+        fi
+        echo "$test_failure"
+    done
+    IFS=$oldifs
+    echo "==============================================================="
     exit 1
 fi

@@ -1,10 +1,11 @@
-Using winetricks 20180217 - sha256sum: 5ae9eb539ad58eb7437c00ef4bdaa0efd63e6be474c6c8957316f6a54f0911cd with wine-3.0 (Debian 3.0-1) and WINEARCH=win32
+Using winetricks 20180815 - sha256sum: 9343f9174146c0fa4d34e18e05269ae772a45ba78e3d8786829fa21895f6f7f4 with wine-3.0.2 (Debian 3.0.2-1) and WINEARCH=win32
 3m_library               3M Cloud Library (3M Company, 2015) [downloadable]
 7zip                     7-Zip 16.02 (Igor Pavlov, 2016) [downloadable]
 abiword                  AbiWord 2.8.6 (AbiSource, 2010) [downloadable]
 adobe_diged              Adobe Digital Editions 1.7 (Adobe, 2011) [downloadable]
 adobe_diged4             Adobe Digital Editions 4.5 (Adobe, 2015) [downloadable]
 autohotkey               AutoHotKey (autohotkey.org, 2010) [downloadable]
+busybox                  BusyBox FRP-2121 (Ron Yorston / Busybox authors, 2015) [downloadable]
 cmake                    CMake 2.8 (Kitware, 2013) [downloadable]
 colorprofile             Standard RGB color profile (Microsoft, 2005) [downloadable]
 controlpad               MS ActiveX Control Pad (Microsoft, 1997) [downloadable]
@@ -13,7 +14,7 @@ emu8086                  emu8086 (emu8086.com, 2015) [downloadable]
 ev3                      Lego Mindstorms EV3 Home Edition (Lego, 2014) [downloadable]
 firefox                  Firefox 51.0 (Mozilla, 2017) [downloadable]
 fontxplorer              Font Xplorer 1.2.2 (Moon Software, 2001) [downloadable]
-foobar2000               foobar2000 v1.3.14 (Peter Pawlowski, 2016)
+foobar2000               foobar2000 v1.4 (Peter Pawlowski, 2018)
 iceweasel                GNU Icecat 31.7.0 (GNU Foundation, 2015) [downloadable]
 irfanview                Irfanview (Irfan Skiljan, 2016) [downloadable]
 kde                      KDE on Windows (various, 2013) [downloadable]
@@ -30,11 +31,11 @@ nook                     Nook for PC (e-book reader) (Barnes & Noble, 2011) [dow
 npp                      Notepad++ (Don Ho, 2015) [downloadable]
 office2003pro            Microsoft Office 2003 Professional (Microsoft, 2002)
 office2007pro            Microsoft Office 2007 Professional (Microsoft, 2006)
+office2013pro            Microsoft Office 2013 Professional (Microsoft, 2013) [downloadable]
 ollydbg110               OllyDbg (ollydbg.de, 2004) [downloadable]
 ollydbg200               OllyDbg (ollydbg.de, 2010) [downloadable]
 ollydbg201               OllyDbg (ollydbg.de, 2013) [downloadable]
 openwatcom               Open Watcom C/C++ compiler (can compile win16 code!) (Watcom, 2010) [downloadable]
-picasa39                 Picasa 3.9 (Google, 2014)
 protectionid             Protection ID (CDKiLLER & TippeX, 2016)
 psdk2003                 MS Platform SDK 2003 (Microsoft, 2003) [downloadable]
 psdkwin7                 MS Windows 7 SDK (Microsoft, 2009) [downloadable]
